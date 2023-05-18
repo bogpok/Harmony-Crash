@@ -28,7 +28,7 @@ window.addEventListener('load', function(){
                 if (keysDict.includes(e.key) && this.keys.indexOf(e.key) === -1 ) {
                     this.keys.push(e.key);
                 }
-                console.log(this.keys);
+                
             });
 
             window.addEventListener('keyup', e => {
@@ -135,7 +135,7 @@ window.addEventListener('load', function(){
                 )[0].n;
                     
                 this.frame.current = this.frame.current % currentstate_n;
-                console.log(this.frame.current);
+                
                 this.frame.timer = 0;
             } else {
                 this.frame.timer += dt;
@@ -169,25 +169,29 @@ window.addEventListener('load', function(){
             if (input.keys.indexOf('d') > -1) {
                 // move right
                 this.v.x = this.v.m;
+                this.frame.state = 'run'
             } else if (input.keys.indexOf('a') > -1) {
                 // move left
                 this.v.x = -this.v.m;
             } else {
-                this.v.x = 0;                
+                this.v.x = 0;
+                this.frame.state = 'idle'                
             }
 
             if (input.keys.indexOf('w') > -1 && this.jump.on) {
                 // jump
                 this.v.y = -this.v.m*G*3;
+                this.frame.state = 'j_up' 
                 
             } else {
                 // fall
                 this.v.y += G/dt/5;
+                if (!this.jump.on) this.frame.state = 'j_down';
             }
             
             if (input.keys.indexOf('s') > -1) {
-                // crouch
-                
+                // meditate
+                this.frame.state = 'meditate';
             } 
             /*
             else {
