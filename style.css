@@ -12,3 +12,7 @@ body {
 #playerImage, #Background, #hound {
     display: none;
 }
+
+p {
+    color: white;
+}

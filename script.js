@@ -18,12 +18,12 @@ window.addEventListener('load', function(){
         constructor() {
             // keep track of multiple keys presses
             this.keys = [];
-
+            
             // with every instance event listener created
             // using arrow fucntion inherits parent scope (lexical scoping)
             window.addEventListener('keydown', e => {
                 // when any button is pressed
-                
+                console.log(e);
                 // element is not present in the array
                 if (keysDict.includes(e.key) && this.keys.indexOf(e.key) === -1 ) {
                     this.keys.push(e.key);
@@ -86,11 +86,12 @@ window.addEventListener('load', function(){
             }
 
             // GAME CONFIG
-            this.gameConfig = {
+            this.gCfg = {
                 groundLevel: 20,                
             }
-            this.gameConfig.lowerY = this.gameHeight - this.gameConfig.groundLevel - this.hitbox.height
             
+            this.gCfg.lowerY = this.gameHeight - this.gCfg.groundLevel - this.hitbox.height
+
             //problem with the sprite COMPENSATE
             this.frame.bound = {
                 x: 11 - this.frame.width/2,
@@ -99,7 +100,7 @@ window.addEventListener('load', function(){
             
             // x0 and y0
             this.x = 0;
-            this.y = this.gameHeight - this.gameConfig.groundLevel - this.hitbox.height;           
+            this.y = this.gameHeight - this.gCfg.groundLevel - this.hitbox.height;           
 
             this.position = {
                 x: this.x + this.frame.bound.x,
@@ -109,13 +110,17 @@ window.addEventListener('load', function(){
             this.v = {
                 x: 0,
                 y: 0,
-                m: 0.1,
+                m: 0.3,
             }
 
             this.jump = {
                 max: this.hitbox.height*2,
-                on: true,
+                on: true,                
             }
+
+
+            
+            
             
             
         }
@@ -165,11 +170,11 @@ window.addEventListener('load', function(){
 
             if (input.keys.indexOf('w') > -1 && this.jump.on) {
                 // jump
-                this.v.y = -this.v.m*2;
-                if (this.y < this.gameConfig.lowerY - this.jump.max) this.jump.on = false; 
+                this.v.y = -this.v.m*G*3;
+                
             } else {
                 // fall
-                this.v.y = G/dt;
+                this.v.y += G/dt/5;
             }
             
             if (input.keys.indexOf('s') > -1) {
@@ -190,9 +195,14 @@ window.addEventListener('load', function(){
             if (this.x < 0) this.update_x(dt, 0, true);
             else if (this.x > this.gameWidth - this.hitbox.width) this.update_x(dt, this.gameWidth - this.hitbox.width, true);
 
-            // Oy            
-            if (this.y > this.gameConfig.lowerY) {
-                this.update_y(dt, this.gameConfig.lowerY, true);
+            // Oy         
+            if (this.y < this.gCfg.lowerY - this.jump.max) {
+                this.jump.on = false;
+                this.update_y(dt, this.gCfg.lowerY - this.jump.max, true);
+                this.v.y = 0;
+            } else if (this.y > this.gCfg.lowerY) {
+                // GROUND
+                this.update_y(dt, this.gCfg.lowerY, true);
                 this.jump.on = true;
             } 
             
