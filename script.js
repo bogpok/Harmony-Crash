@@ -4,13 +4,15 @@ window.addEventListener('load', function(){
     canvas.width = 300;
     canvas.height = 200;
 
+    const G = 0.981;
+
     let keysDict = [
         'w',
         'a',
         's',
         'd',
     ];
-
+    
 
     class InputHandler {
         constructor() {
@@ -21,7 +23,7 @@ window.addEventListener('load', function(){
             // using arrow fucntion inherits parent scope (lexical scoping)
             window.addEventListener('keydown', e => {
                 // when any button is pressed
-
+                
                 // element is not present in the array
                 if (keysDict.includes(e.key) && this.keys.indexOf(e.key) === -1 ) {
                     this.keys.push(e.key);
@@ -45,7 +47,6 @@ window.addEventListener('load', function(){
             this.gameWidth = gameWidth;
             this.gameHeight = gameHeight;     
 
-            
             
             this.img = {
                 height: 1792,
@@ -84,9 +85,11 @@ window.addEventListener('load', function(){
                 height: 35,
             }
 
+            // GAME CONFIG
             this.gameConfig = {
-                groundLevel: 20,
+                groundLevel: 20,                
             }
+            this.gameConfig.lowerY = this.gameHeight - this.gameConfig.groundLevel - this.hitbox.height
             
             //problem with the sprite COMPENSATE
             this.frame.bound = {
@@ -108,6 +111,11 @@ window.addEventListener('load', function(){
                 y: 0,
                 m: 0.1,
             }
+
+            this.jump = {
+                max: this.hitbox.height*2,
+                on: true,
+            }
             
             
         }
@@ -121,33 +129,74 @@ window.addEventListener('load', function(){
             }
         }
         update_x(dt, dx = 0, reset = false){
-            // horizontal movement
-            
+            // horizontal movement            
             if (reset) {
                 this.x = dx;
                 this.position.x = this.x + this.frame.bound.x;
             } else {
                 this.x += dx;
                 this.position.x += dx;
-            }
+            }        
+        }
+        update_y(dt, dy = 0, reset = false){
+            if (reset) {
+                this.y = dy;
+                this.position.y = this.y + this.frame.bound.y;
+            } else {
+                this.y += dy;
+                this.position.y += dy;
+            }   
         }
         update(dt){
             this.#changeFrame(dt);
             
-            this.update_x(dt, this.v.x*dt)
+            this.update_x(dt, this.v.x*dt);
+            this.update_y(dt, this.v.y*dt);
 
             if (input.keys.indexOf('d') > -1) {
+                // move right
                 this.v.x = this.v.m;
             } else if (input.keys.indexOf('a') > -1) {
+                // move left
                 this.v.x = -this.v.m;
             } else {
-                this.v.x = 0;
+                this.v.x = 0;                
             }
+
+            if (input.keys.indexOf('w') > -1 && this.jump.on) {
+                // jump
+                this.v.y = -this.v.m*2;
+                if (this.y < this.gameConfig.lowerY - this.jump.max) this.jump.on = false; 
+            } else {
+                // fall
+                this.v.y = G/dt;
+            }
+            
+            if (input.keys.indexOf('s') > -1) {
+                // crouch
+                
+            } 
+            /*
+            else {
+                this.v.x = 0;
+                this.v.y = G/dt;
+            }
+            */
 
             
             //#region boundaries
+
+            // Ox
             if (this.x < 0) this.update_x(dt, 0, true);
             else if (this.x > this.gameWidth - this.hitbox.width) this.update_x(dt, this.gameWidth - this.hitbox.width, true);
+
+            // Oy            
+            if (this.y > this.gameConfig.lowerY) {
+                this.update_y(dt, this.gameConfig.lowerY, true);
+                this.jump.on = true;
+            } 
+            
+
             //#endregion
             
             
