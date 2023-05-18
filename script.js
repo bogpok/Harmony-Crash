@@ -72,7 +72,7 @@ window.addEventListener('load', function(){
                 width: this.img.width/25,
                 height: this.img.height/this.img.states.length,
                 current: 0,
-                state: 0,
+                state: 'idle',
                 flapinterval: 100,
                 timer: 0,
             }
@@ -127,7 +127,15 @@ window.addEventListener('load', function(){
         #changeFrame(dt){
             if (this.frame.timer > this.frame.flapinterval) {
                 this.frame.current++;
-                this.frame.current = this.frame.current % this.img.states[this.frame.state].n;
+                // this.frame.current = this.frame.current % this.img.states[
+                //     this.frame.state
+                // ].n;
+                let currentstate_n = this.img.states.filter(
+                    e => e.name === this.frame.state
+                )[0].n;
+                    
+                this.frame.current = this.frame.current % currentstate_n;
+                console.log(this.frame.current);
                 this.frame.timer = 0;
             } else {
                 this.frame.timer += dt;
@@ -222,10 +230,10 @@ window.addEventListener('load', function(){
             context.strokeRect(this.position.x, this.position.y, this.frame.width, this.frame.height)
             
             
-            
+            let state_n = this.img.states.findIndex((e) => e.name === this.frame.state);
 
             context.drawImage(this.image, 
-                this.frame.current*this.frame.width, this.frame.state*this.frame.height, this.frame.width, this.frame.height,
+                this.frame.current*this.frame.width, state_n*this.frame.height, this.frame.width, this.frame.height,
                 this.position.x, this.position.y, this.frame.width, this.frame.height);
         }
 
