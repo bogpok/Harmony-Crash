@@ -9,7 +9,7 @@ body {
     transform: translate(-50%, -50%);
     border: 5px solid white;
 }
-#playerImage, #Background, #hound {
+#playerImage, #backgroundImage, #hound {
     display: none;
 }
 

@@ -42,6 +42,37 @@ window.addEventListener('load', function(){
 
     }
 
+    class Background {
+        constructor(gameWidth, gameHeight){
+            this.gameHeight = gameHeight;
+            this.gameWidth = gameWidth;
+
+            this.image = backgroundImage;
+            this.x = 0;
+            this.y = 0;
+
+            this.img = {
+                height: 398,
+                width: 928,                 
+            }
+            this.img.scale = canvas.height/this.img.height
+
+            this.width = this.img.scale * this.img.width;
+
+            this.speed = 10;
+
+        }
+        draw(context){
+            context.drawImage(this.image, this.x, this.y, this.width, this.img.scale * this.img.height, )
+
+            context.drawImage(this.image, this.x + this.width, this.y, this.width, this.img.scale * this.img.height, )
+        }
+        update(dt){
+            this.x -= this.speed;
+            if (this.x < -this.width) this.x = 0;
+        }
+    }
+
     class Player {
         constructor(gameWidth, gameHeight){
             this.gameWidth = gameWidth;
@@ -68,8 +99,9 @@ window.addEventListener('load', function(){
                     {name:'faint', n: 14},                    
                 ]
             }
+            this.img.max = Math.max(...this.img.states.map(e=>e.n))
             this.frame = {
-                width: this.img.width/25,
+                width: this.img.width/this.img.max,
                 height: this.img.height/this.img.states.length,
                 current: 0,
                 state: 'idle',
@@ -87,7 +119,7 @@ window.addEventListener('load', function(){
 
             // GAME CONFIG
             this.gCfg = {
-                groundLevel: 20,                
+                groundLevel: 30,                
             }
             
             this.gCfg.lowerY = this.gameHeight - this.gCfg.groundLevel - this.hitbox.height
@@ -118,13 +150,16 @@ window.addEventListener('load', function(){
                 on: true,                
             }
 
-
             
             
             
             
         }
-        #changeFrame(dt){
+        #changeState(state = 'idle'){
+            this.frame.state = state;
+            //this.frame.current = 0;
+        }
+        changeFrame(dt){
             if (this.frame.timer > this.frame.flapinterval) {
                 this.frame.current++;
                 // this.frame.current = this.frame.current % this.img.states[
@@ -161,7 +196,7 @@ window.addEventListener('load', function(){
             }   
         }
         update(dt){
-            this.#changeFrame(dt);
+            this.changeFrame(dt);
             
             this.update_x(dt, this.v.x*dt);
             this.update_y(dt, this.v.y*dt);
@@ -169,19 +204,20 @@ window.addEventListener('load', function(){
             if (input.keys.indexOf('d') > -1) {
                 // move right
                 this.v.x = this.v.m;
-                this.frame.state = 'run'
+                this.#changeState('run')
             } else if (input.keys.indexOf('a') > -1) {
                 // move left
                 this.v.x = -this.v.m;
             } else {
                 this.v.x = 0;
-                this.frame.state = 'idle'                
+                this.#changeState('idle')
+                                
             }
 
             if (input.keys.indexOf('w') > -1 && this.jump.on) {
                 // jump
                 this.v.y = -this.v.m*G*3;
-                this.frame.state = 'j_up' 
+                this.#changeState('j_up' )                
                 
             } else {
                 // fall
@@ -191,7 +227,7 @@ window.addEventListener('load', function(){
             
             if (input.keys.indexOf('s') > -1) {
                 // meditate
-                this.frame.state = 'meditate';
+                this.frame.state = 'j_up';
             } 
             /*
             else {
@@ -243,11 +279,121 @@ window.addEventListener('load', function(){
 
     }
 
-    class Background {
+    
 
-    }
+    class Enemy extends Player {
+        constructor(gameWidth, gameHeight){
+            super()
+            this.gameWidth = gameWidth;
+            this.gameHeight = gameHeight;     
 
-    class Enemy {
+            this.image = hound;
+            this.img = {
+                height: 32,
+                width: 335,
+                states: [
+                    {name:'run', n: 5},
+                                       
+                ]
+            }            
+            this.img.max = Math.max(...this.img.states.map(e=>e.n))         
+            
+            this.frame = {
+                width: this.img.width/this.img.max,
+                height: this.img.height/this.img.states.length,
+                current: 0,
+                state: 'run',
+                flapinterval: 100,
+                timer: 0,
+            }
+            
+            
+
+            // FIRST ANIMATION
+            this.hitbox = {
+                width: this.frame.width,
+                height: this.frame.height,
+            }
+
+            // GAME CONFIG
+            this.gCfg = {
+                groundLevel: 30,                
+            }
+            
+            this.gCfg.lowerY = this.gameHeight - this.gCfg.groundLevel - this.hitbox.height
+
+            
+            //problem with the sprite COMPENSATE
+            this.frame.bound = {
+                x: 0,
+                y: 0,
+            }
+            
+            
+            // x0 and y0
+            this.x = this.gameWidth;
+            this.y = this.gameHeight - this.gCfg.groundLevel - this.hitbox.height;           
+
+            
+            this.position = {
+                x: this.x + this.frame.bound.x,
+                y: this.y + this.frame.bound.y,
+            }
+            
+            this.v = {
+                x: 0,
+                y: 0,
+                m: 0.3,
+            }
+
+            this.jump = {
+                max: this.hitbox.height*2,
+                on: true,                
+            }
+            
+        }
+
+        draw(context){
+            // hitbox area
+            context.fillStyle = 'white';
+            context.fillRect(this.x, this.y, this.hitbox.width, this.hitbox.height);
+
+            // whole slide from spritesheet
+            context.strokeStyle = 'red';
+            context.strokeRect(this.position.x, this.position.y, this.frame.width, this.frame.height)
+            
+            
+            let state_n = this.img.states.findIndex((e) => e.name === this.frame.state);
+
+            context.drawImage(this.image, 
+                this.frame.current*this.frame.width, state_n*this.frame.height, this.frame.width, this.frame.height,
+                this.position.x, this.position.y, this.frame.width, this.frame.height);
+        }
+        update(dt){
+            this.changeFrame(dt);
+            this.v.x = Math.random()*2 + 1;
+            this.update_x(dt, -this.v.x);
+        }
+        update_x(dt, dx = 0, reset = false){
+            // horizontal movement            
+            if (reset) {
+                this.x = dx;
+                this.position.x = this.x + this.frame.bound.x;
+            } else {
+                this.x += dx;
+                this.position.x += dx;
+            }        
+        }
+        update_y(dt, dy = 0, reset = false){
+            if (reset) {
+                this.y = dy;
+                this.position.y = this.y + this.frame.bound.y;
+            } else {
+                this.y += dy;
+                this.position.y += dy;
+            }   
+        }
+
 
     }
 
@@ -260,8 +406,11 @@ window.addEventListener('load', function(){
     }
 
     //#region prepare for animate
+    const bg = new Background;
     const input = new InputHandler();
     const player = new Player(canvas.width, canvas.height);
+    const enemy = new Enemy(canvas.width, canvas.height);
+    
 
     let lastTime = 0;
     //#endregion
@@ -271,8 +420,14 @@ window.addEventListener('load', function(){
         dt = timestamp - lastTime;
         lastTime = timestamp;
 
+        bg.draw(ctx);
+        //bg.update(dt);
+
         player.update(dt);
         player.draw(ctx);
+
+        enemy.update(dt);
+        enemy.draw(ctx);
         
         requestAnimationFrame(animate);
     }
