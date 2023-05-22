@@ -146,7 +146,7 @@ window.addEventListener('load', function(){
             }
 
             this.jump = {
-                max: this.hitbox.height*2,
+                max: this.hitbox.height*3,
                 on: true,                
             }
 
@@ -157,7 +157,21 @@ window.addEventListener('load', function(){
         }
         #changeState(state = 'idle'){
             this.frame.state = state;
-            //this.frame.current = 0;
+
+            let currentstate_n = this.img.states.filter(
+                e => e.name === this.frame.state
+            )[0].n;
+            if (state != 'idle'){
+                console.log(state, currentstate_n)
+                console.log(this.frame.current)
+            }
+            else if (false) {
+                if (this.frame.current > currentstate_n) this.frame.current = 0;
+            }
+            
+
+            
+            
         }
         changeFrame(dt){
             if (this.frame.timer > this.frame.flapinterval) {
@@ -201,6 +215,11 @@ window.addEventListener('load', function(){
             this.update_x(dt, this.v.x*dt);
             this.update_y(dt, this.v.y*dt);
 
+            if (input.keys.length == 0) {
+                this.v.x = 0;
+                this.#changeState('idle');                                
+            }
+
             if (input.keys.indexOf('d') > -1) {
                 // move right
                 this.v.x = this.v.m;
@@ -208,34 +227,27 @@ window.addEventListener('load', function(){
             } else if (input.keys.indexOf('a') > -1) {
                 // move left
                 this.v.x = -this.v.m;
-            } else {
-                this.v.x = 0;
-                this.#changeState('idle')
-                                
-            }
+                this.#changeState('run')
+            } 
 
             if (input.keys.indexOf('w') > -1 && this.jump.on) {
                 // jump
                 this.v.y = -this.v.m*G*3;
-                this.#changeState('j_up' )                
+                this.#changeState('j_up')                
                 
             } else {
                 // fall
                 this.v.y += G/dt/5;
-                if (!this.jump.on) this.frame.state = 'j_down';
+                if (!this.jump.on) this.#changeState('j_down');
             }
             
             if (input.keys.indexOf('s') > -1) {
                 // meditate
-                this.frame.state = 'j_up';
+                this.#changeState('meditate')
+                
+                
             } 
-            /*
-            else {
-                this.v.x = 0;
-                this.v.y = G/dt;
-            }
-            */
-
+        
             
             //#region boundaries
 
