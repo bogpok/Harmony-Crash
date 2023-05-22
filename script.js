@@ -6,6 +6,7 @@ window.addEventListener('load', function(){
     canvas.height = 200;
 
     const G = 0.981;
+    const HEALTH_POINTS = 3;
 
     let keysDict = [
         'w',
@@ -13,6 +14,7 @@ window.addEventListener('load', function(){
         's',
         'd',
         ' ',
+        
     ];
 
     let score = 0;
@@ -31,6 +33,8 @@ window.addEventListener('load', function(){
                 // element is not present in the array
                 if (keysDict.includes(e.key) && this.keys.indexOf(e.key) === -1 ) {
                     this.keys.push(e.key);
+                } else if (e.key==='Enter' && gameOver) {
+                    restartGame();
                 }
                 
             });
@@ -81,8 +85,7 @@ window.addEventListener('load', function(){
         constructor(gameWidth, gameHeight){
             this.gameWidth = gameWidth;
             this.gameHeight = gameHeight;     
-
-            
+            this.image = playerImage;
             this.img = {
                 height: 1792,
                 width: 7200,
@@ -111,11 +114,8 @@ window.addEventListener('load', function(){
                 state: 'idle',
                 flapinterval: 100,
                 timer: 0,
-            }
+            }           
             
-            this.image = playerImage;
-
-            // FIRST ANIMATION
             this.hitbox = {
                 width: 25,
                 height: 35,
@@ -133,16 +133,7 @@ window.addEventListener('load', function(){
                 x: 11 - this.frame.width/2,
                 y: this.hitbox.height+7 - this.frame.height,
             }
-            
-            // x0 and y0
-            this.x = 0;
-            this.y = this.gameHeight - this.gCfg.groundLevel - this.hitbox.height;           
 
-            this.position = {
-                x: this.x + this.frame.bound.x,
-                y: this.y + this.frame.bound.y,
-            }
-            
             this.v = {
                 x: 0,
                 y: 0,
@@ -153,7 +144,16 @@ window.addEventListener('load', function(){
                 max: this.hitbox.height*3,
                 on: true,                
             }
+            
+            // x0 and y0
+            this.x = 0;
+            this.y = this.gameHeight - this.gCfg.groundLevel - this.hitbox.height;           
 
+            this.position = {
+                x: this.x + this.frame.bound.x,
+                y: this.y + this.frame.bound.y,
+            }            
+            
             this.center = {
                 x: this.hitbox.width / 2 + this.x,
                 y: this.hitbox.height / 2 + this.y,
@@ -163,10 +163,38 @@ window.addEventListener('load', function(){
                 timer: 0,
                 interval: 300,
                 on: false
+            }           
+                    
+            
+        }
+
+        reset(){
+            this.frame = {
+                current: 0,
+                state: 'idle',                
+                timer: 0,
             }
+
+            // x0 and y0
+            this.x = 0;
+            this.y = this.gameHeight - this.gCfg.groundLevel - this.hitbox.height;           
+            console.log(this)
+
+            this.position = {
+                x: this.x + this.frame.bound.x,
+                y: this.y + this.frame.bound.y,
+            }            
             
-            
-            
+            this.center = {
+                x: this.hitbox.width / 2 + this.x,
+                y: this.hitbox.height / 2 + this.y,
+            }
+
+            this.takehit = {
+                timer: 0,                
+                on: false
+            }    
+
         }
         #changeState(state = 'idle'){
             this.frame.state = state;
@@ -358,7 +386,10 @@ window.addEventListener('load', function(){
 
         }
         #gotHit(dt){
-            hearts--;
+            hp--;
+
+            if (hp < 0) gameOver = true;
+
             this.update_x(dt, -10);            
             this.#changeState('takehit');
             this.takehit.on = true;
@@ -517,8 +548,8 @@ window.addEventListener('load', function(){
         context.fillText('Score: ' + score, 10, 20);
     }
 
-    function displayHearts(context) {
-        let _text = 'Hearts: ' + hearts
+    function displayHp(context) {
+        let _text = 'HP: ' + hp
         context.fillStyle = 'crimsone';
         context.font = String(15) + 'px Helvetica';
         context.fillText(_text, 10, canvas.height-10);
@@ -528,11 +559,33 @@ window.addEventListener('load', function(){
 
     }
 
+    function restartGame(){
+        player=new Player(canvas.width, canvas.height);
+
+        enemies = [];
+        score = 0;
+        hp = HEALTH_POINTS;
+
+        gameOver = false;
+
+        animate()
+
+    }
+
+    function gameOverScreen(context){
+        context.fillStyle = 'grey';
+        context.fillRect(0,0,canvas.width,canvas.height)
+        context.textAlign = 'center';
+        context.fillStyle = 'black';
+        context.fillText('Game Over',canvas.width/2, canvas.height/2)
+    }
+
     //#region prepare for animate
     const bg = new Background;
     const input = new InputHandler();
-    const player = new Player(canvas.width, canvas.height);
-    let hearts = 3;
+    let player = new Player(canvas.width, canvas.height);
+    let hp = HEALTH_POINTS;
+    let gameOver = false;
     
 
     let lastTime = 0;
@@ -554,9 +607,10 @@ window.addEventListener('load', function(){
         
         
         displayStatusText(ctx);
-        displayHearts(ctx);
+        displayHp(ctx);
 
-        requestAnimationFrame(animate);
+        if (!gameOver) requestAnimationFrame(animate);
+        else gameOverScreen(ctx);
     }
     animate(0);
 });
