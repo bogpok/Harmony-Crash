@@ -1,3 +1,4 @@
+/** @type {HTMLCanvasElement} */
 window.addEventListener('load', function(){
     const canvas = document.getElementById('canvas1');
     const ctx = canvas.getContext('2d');
@@ -11,7 +12,10 @@ window.addEventListener('load', function(){
         'a',
         's',
         'd',
+        ' ',
     ];
+
+    let score = 0;
     
 
     class InputHandler {
@@ -150,7 +154,16 @@ window.addEventListener('load', function(){
                 on: true,                
             }
 
-            
+            this.center = {
+                x: this.hitbox.width / 2 + this.x,
+                y: this.hitbox.height / 2 + this.y,
+            }
+
+            this.takehit = {
+                timer: 0,
+                interval: 300,
+                on: false
+            }
             
             
             
@@ -209,28 +222,32 @@ window.addEventListener('load', function(){
                 this.position.y += dy;
             }   
         }
-        update(dt){
+        update(dt, enemies){
             this.changeFrame(dt);
             
             this.update_x(dt, this.v.x*dt);
             this.update_y(dt, this.v.y*dt);
+            this.center = {
+                x: this.hitbox.width / 2 + this.x,
+                y: this.hitbox.height / 2 + this.y,
+            }
 
-            if (input.keys.length == 0) {
+            if (input.keys.length == 0 && !this.takehit.on) {
                 this.v.x = 0;
                 this.#changeState('idle');                                
             }
 
-            if (input.keys.indexOf('d') > -1) {
+            if (input.keys.indexOf('d') > -1 ) {
                 // move right
                 this.v.x = this.v.m;
                 this.#changeState('run')
-            } else if (input.keys.indexOf('a') > -1) {
+            } else if (input.keys.indexOf('a') > -1 ) {
                 // move left
                 this.v.x = -this.v.m;
                 this.#changeState('run')
             } 
 
-            if (input.keys.indexOf('w') > -1 && this.jump.on) {
+            if (input.keys.indexOf('w') > -1 && this.jump.on ) {
                 // jump
                 this.v.y = -this.v.m*G*3;
                 this.#changeState('j_up')                
@@ -241,13 +258,18 @@ window.addEventListener('load', function(){
                 if (!this.jump.on) this.#changeState('j_down');
             }
             
-            if (input.keys.indexOf('s') > -1) {
+            if (input.keys.indexOf('s') > -1 && !this.takehit.on) {
                 // meditate
                 this.#changeState('meditate')
-                
-                
+                                
             } 
-        
+
+            if (input.keys.indexOf(' ') > -1 && !this.takehit.on) {
+                this.frame.oldflap = this.frame.flapinterval
+                this.frame.flapinterval = 50;
+                this.#changeState('atk2');
+            }
+            
             
             //#region boundaries
 
@@ -268,6 +290,17 @@ window.addEventListener('load', function(){
             
 
             //#endregion
+
+            if (!this.takehit.on) this.detectCollision(dt, enemies);
+            else {
+                if (this.takehit.timer > this.takehit.interval) {
+                    this.takehit.on = false;
+                    this.takehit.timer = 0;
+                } else {
+                    this.takehit.timer += dt;
+                }
+            }
+            console.log(this.takehit.timer)
             
             
         }
@@ -289,9 +322,62 @@ window.addEventListener('load', function(){
                 this.position.x, this.position.y, this.frame.width, this.frame.height);
         }
 
+        detectCollision(dt, enemies){
+
+            let rect1 = {
+                x: this.x,
+                y: this.y,
+                width: this.hitbox.width,
+                height: this.hitbox.height,                
+            }
+            if (this.frame.state.startsWith('atk')) {
+                rect1.width+=7;                
+            }
+
+            enemies.forEach(enemy => {
+                let rect2 = {
+                    x: enemy.x,
+                    y: enemy.y,
+                    width: enemy.hitbox.width,
+                    height: enemy.hitbox.height, 
+                }
+                
+                if (collideRect(rect1, rect2)) {
+                    
+                    if (this.frame.state.startsWith('atk')) {
+                        enemy.deleteMarker = true;
+                        score++;
+                    } else {
+                        this.#gotHit(dt);
+                    }
+
+
+                }
+
+            })          
+
+        }
+        #gotHit(dt){
+            hearts--;
+            this.update_x(dt, -10);            
+            this.#changeState('takehit');
+            this.takehit.on = true;
+        }
+
     }
 
-    
+    collideRect = (rect1, rect2) => {
+        if (rect1.x > rect2.x + rect2.width ||
+            rect1.x + rect1.width < rect2.x ||
+            rect1.y > rect2.y + rect2.height ||
+            rect1.y + rect1.height < rect2.y )
+            {
+                return false;
+            }
+        else {             
+            return true;
+        }
+    }
 
     class Enemy extends Player {
         constructor(gameWidth, gameHeight){
@@ -315,7 +401,7 @@ window.addEventListener('load', function(){
                 height: this.img.height/this.img.states.length,
                 current: 0,
                 state: 'run',
-                flapinterval: 100,
+                flapinterval: 50,
                 timer: 0,
             }
             
@@ -323,8 +409,13 @@ window.addEventListener('load', function(){
 
             // FIRST ANIMATION
             this.hitbox = {
-                width: this.frame.width,
-                height: this.frame.height,
+                width: this.frame.width-16,
+                height: this.frame.height-5,
+            }
+
+            this.frame.bound = {
+                x: -8,
+                y: -5,
             }
 
             // GAME CONFIG
@@ -335,11 +426,8 @@ window.addEventListener('load', function(){
             this.gCfg.lowerY = this.gameHeight - this.gCfg.groundLevel - this.hitbox.height
 
             
-            //problem with the sprite COMPENSATE
-            this.frame.bound = {
-                x: 0,
-                y: 0,
-            }
+            
+            
             
             
             // x0 and y0
@@ -362,6 +450,8 @@ window.addEventListener('load', function(){
                 max: this.hitbox.height*2,
                 on: true,                
             }
+
+            this.deleteMarker = false;
             
         }
 
@@ -385,35 +475,56 @@ window.addEventListener('load', function(){
             this.changeFrame(dt);
             this.v.x = Math.random()*2 + 1;
             this.update_x(dt, -this.v.x);
+
+            if (this.x < -this.hitbox.width) this.deleteMarker = true; 
         }
-        update_x(dt, dx = 0, reset = false){
-            // horizontal movement            
-            if (reset) {
-                this.x = dx;
-                this.position.x = this.x + this.frame.bound.x;
-            } else {
-                this.x += dx;
-                this.position.x += dx;
-            }        
-        }
-        update_y(dt, dy = 0, reset = false){
-            if (reset) {
-                this.y = dy;
-                this.position.y = this.y + this.frame.bound.y;
-            } else {
-                this.y += dy;
-                this.position.y += dy;
-            }   
-        }
+        
 
 
     }
 
-    function handleEnemies() {
+    let enemies = [];
+    let enemyConfig = {
+        timer:  0,
+        interval: 1000,
+    }
+    
 
+    function handleEnemies(dt) {
+
+        if (enemyConfig.timer > enemyConfig.interval) {
+            enemies.push(new Enemy(canvas.width, canvas.height));
+            enemyConfig.timer = 0;
+        } else {
+            enemyConfig.timer += dt;
+        }
+        
+
+        enemies.forEach(enemy => {
+            // enemy.update_x(dt, 100, true);
+            // enemy.image.flapinterval = 500
+            enemy.update(dt);
+            enemy.draw(ctx);
+        })
+        
+        enemies = enemies.filter(e => !e.deleteMarker);
+        
     }
 
-    function displayStatusText() {
+    function displayStatusText(context) {
+        context.fillStyle = 'white';
+        context.font = String(15) + 'px Helvetica';
+        context.fillText('Score: ' + score, 10, 20);
+    }
+
+    function displayHearts(context) {
+        let _text = 'Hearts: ' + hearts
+        context.fillStyle = 'crimsone';
+        context.font = String(15) + 'px Helvetica';
+        context.fillText(_text, 10, canvas.height-10);
+
+        context.fillStyle = 'red';
+        context.fillText(_text, 11, canvas.height-9);
 
     }
 
@@ -421,7 +532,7 @@ window.addEventListener('load', function(){
     const bg = new Background;
     const input = new InputHandler();
     const player = new Player(canvas.width, canvas.height);
-    const enemy = new Enemy(canvas.width, canvas.height);
+    let hearts = 3;
     
 
     let lastTime = 0;
@@ -435,12 +546,16 @@ window.addEventListener('load', function(){
         bg.draw(ctx);
         //bg.update(dt);
 
-        player.update(dt);
-        player.draw(ctx);
-
-        enemy.update(dt);
-        enemy.draw(ctx);
         
+        handleEnemies(dt);
+
+        player.update(dt, enemies);
+        player.draw(ctx);
+        
+        
+        displayStatusText(ctx);
+        displayHearts(ctx);
+
         requestAnimationFrame(animate);
     }
     animate(0);
