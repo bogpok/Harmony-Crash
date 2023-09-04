@@ -568,7 +568,7 @@ window.addEventListener('load', function(){
 
         gameOver = false;
 
-        animate()
+        animate(0)
 
     }
 
