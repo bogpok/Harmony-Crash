@@ -382,7 +382,7 @@ window.addEventListener('load', function(){
         #gotHit(dt){
             hp--;
 
-            if (hp < 0) gameOver = true;
+            if (hp <= 0) gameOver = true;
 
             this.update_x(dt, -10);            
             this.#changeState('takehit');
