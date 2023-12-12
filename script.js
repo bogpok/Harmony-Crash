@@ -13,12 +13,15 @@ window.addEventListener('load', function(){
         'a',
         's',
         'd',
-        ' ',
-        
+        ' ',  
     ];
 
     let score = 0;
-    
+    let debugUI = false;
+    const toggleDebug = () => {
+        if (debugUI) debugUI = false;
+        else debugUI = true;
+    }
 
     class InputHandler {
         constructor() {
@@ -26,7 +29,7 @@ window.addEventListener('load', function(){
             this.keys = [];
             
             // with every instance event listener created
-            // using arrow fucntion inherits parent scope (lexical scoping)
+            // using arrow function inherits parent scope (lexical scoping)
             window.addEventListener('keydown', e => {
                 // when any button is pressed
                 console.log(e);
@@ -35,6 +38,8 @@ window.addEventListener('load', function(){
                     this.keys.push(e.key);
                 } else if (e.key==='Enter' && gameOver) {
                     restartGame();
+                } else if (e.key==='`') {
+                    toggleDebug();
                 }
                 
             });
@@ -72,7 +77,6 @@ window.addEventListener('load', function(){
         }
         draw(context){
             context.drawImage(this.image, this.x, this.y, this.width, this.img.scale * this.img.height, )
-
             context.drawImage(this.image, this.x + this.width, this.y, this.width, this.img.scale * this.img.height, )
         }
         update(dt){
@@ -209,11 +213,7 @@ window.addEventListener('load', function(){
             else if (false) {
                 if (this.frame.current > currentstate_n) this.frame.current = 0;
             }
-            
-
-            
-            
-        }
+        }        
         changeFrame(dt){
             if (this.frame.timer > this.frame.flapinterval) {
                 this.frame.current++;
@@ -222,10 +222,8 @@ window.addEventListener('load', function(){
                 // ].n;
                 let currentstate_n = this.img.states.filter(
                     e => e.name === this.frame.state
-                )[0].n;
-                    
-                this.frame.current = this.frame.current % currentstate_n;
-                
+                )[0].n;                    
+                this.frame.current = this.frame.current % currentstate_n;                
                 this.frame.timer = 0;
             } else {
                 this.frame.timer += dt;
@@ -334,15 +332,17 @@ window.addEventListener('load', function(){
         }
 
         draw(context){
-            // hitbox area
-            context.fillStyle = 'white';
-            context.fillRect(this.x, this.y, this.hitbox.width, this.hitbox.height);
+            if (debugUI) {
+                // hitbox area
+                context.fillStyle = 'white';
+                context.fillRect(this.x, this.y, this.hitbox.width, this.hitbox.height);
 
-            // whole slide from spritesheet
-            context.strokeStyle = 'red';
-            context.strokeRect(this.position.x, this.position.y, this.frame.width, this.frame.height)
+                // whole slide from spritesheet
+                context.strokeStyle = 'red';
+                context.strokeRect(this.position.x, this.position.y, this.frame.width, this.frame.height)
+            }
             
-            
+            // number of state / state id
             let state_n = this.img.states.findIndex((e) => e.name === this.frame.state);
 
             context.drawImage(this.image, 
@@ -351,7 +351,6 @@ window.addEventListener('load', function(){
         }
 
         detectCollision(dt, enemies){
-
             let rect1 = {
                 x: this.x,
                 y: this.y,
@@ -361,7 +360,6 @@ window.addEventListener('load', function(){
             if (this.frame.state.startsWith('atk')) {
                 rect1.width+=7;                
             }
-
             enemies.forEach(enemy => {
                 let rect2 = {
                     x: enemy.x,
@@ -378,12 +376,8 @@ window.addEventListener('load', function(){
                     } else {
                         this.#gotHit(dt);
                     }
-
-
                 }
-
             })          
-
         }
         #gotHit(dt){
             hp--;
@@ -455,11 +449,6 @@ window.addEventListener('load', function(){
             }
             
             this.gCfg.lowerY = this.gameHeight - this.gCfg.groundLevel - this.hitbox.height
-
-            
-            
-            
-            
             
             // x0 and y0
             this.x = this.gameWidth;
@@ -487,14 +476,15 @@ window.addEventListener('load', function(){
         }
 
         draw(context){
-            // hitbox area
-            context.fillStyle = 'white';
-            context.fillRect(this.x, this.y, this.hitbox.width, this.hitbox.height);
+            if (debugUI) {
+                // hitbox area
+                context.fillStyle = 'white';
+                context.fillRect(this.x, this.y, this.hitbox.width, this.hitbox.height);
 
-            // whole slide from spritesheet
-            context.strokeStyle = 'red';
-            context.strokeRect(this.position.x, this.position.y, this.frame.width, this.frame.height)
-            
+                // whole slide from spritesheet
+                context.strokeStyle = 'red';
+                context.strokeRect(this.position.x, this.position.y, this.frame.width, this.frame.height)
+            }
             
             let state_n = this.img.states.findIndex((e) => e.name === this.frame.state);
 
@@ -517,7 +507,7 @@ window.addEventListener('load', function(){
     let enemies = [];
     let enemyConfig = {
         timer:  0,
-        interval: 1000,
+        interval: 5e3,
     }
     
 
@@ -574,10 +564,10 @@ window.addEventListener('load', function(){
 
     function gameOverScreen(context){
         context.fillStyle = 'grey';
-        context.fillRect(0,0,canvas.width,canvas.height)
+        context.fillRect(0, 0, canvas.width, canvas.height)
         context.textAlign = 'center';
         context.fillStyle = 'black';
-        context.fillText('Game Over',canvas.width/2, canvas.height/2)
+        context.fillText('Game Over', canvas.width/2, canvas.height/2)
     }
 
     //#region prepare for animate
